@@ -1,0 +1,13 @@
+[package]
+authors = ["Anton Shramko <antonshramko@yandex.ru>"]
+name = "yoga-sys"
+version = "0.1.0"
+build = "build.rs"
+
+[build-dependencies]
+bindgen = "0.36"
+git2 = "0.7"
+gcc = "0.3"
+
+[dependencies]
+ordered-float = "0.5.0"
