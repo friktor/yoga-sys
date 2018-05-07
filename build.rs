@@ -39,7 +39,7 @@ fn bindgen_yoga() {
 	let bindings = bindgen::Builder::default()
 		.rust_target(RustTarget::Nightly);
 	
-	let enumerated_setters = vec![
+	let enumerated_and_edges_setters = vec![
 		"Direction",
 		"FlexDirection",
 		"JustifyContent",
@@ -54,19 +54,30 @@ fn bindgen_yoga() {
 		"FlexGrow",
 		"FlexShrink",
 		"AspectRatio",
+
+		// Edges
+		"Border"
 	];
 
-	let unit_setters = vec![
+	let unit_and_edge_setters = vec![
 		"MinWidth",
 		"MinHeight",
 		"MaxWidth",
 		"MaxHeight",
+
+		// Edge
+		"Position",
+		"Margin",
+		"Padding",
 	]
 
-	let auto_unit_setters = vec![
+	let auto_unit_and_edge_setters = vec![
 		"FlexBasis",
 		"Width",
 		"Height",
+
+		// Edge
+		"Margin",
 	];
 
 	for property in enumerated_setters {
