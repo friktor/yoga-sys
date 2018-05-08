@@ -1,44 +1,43 @@
 extern crate bindgen;
-extern crate git2;
 extern crate gcc;
+extern crate git2;
 
-use bindgen::RustTarget;
-use std::path::PathBuf;
-use git2::Repository;
+use bindgen::{Bindings, Builder, RustTarget};
 use gcc::Build;
+use git2::Repository;
 use std::env;
+use std::path::PathBuf;
 
 fn update_submodules() -> Result<(), git2::Error> {
-  let repo = Repository::open("./")?;
-  let mut submodules = repo.submodules()?;
-  
-  for submodule in submodules.iter_mut() {
-    submodule.update(true, None)?;
-  }
+	let repo = Repository::open("./")?;
+	let mut submodules = repo.submodules()?;
 
-  Ok(())
+	for submodule in submodules.iter_mut() {
+		submodule.update(true, None)?;
+	}
+
+	Ok(())
 }
 
 fn compile_yoga() {
-  let mut c = Build::new();
-  c.cpp(true);
+	let mut c = Build::new();
+	c.cpp(true);
 
-  c.flag("-std=c++14");
-  c.flag("-fno-omit-frame-pointer");
-  c.flag("-fexceptions");
-  c.flag("-Wall");
-  c.flag("-Werror");
-  c.flag("-O3");
-  c.flag("-ffast-math");
-  
-  c.file("yoga/yoga/Yoga.cpp");
-  c.compile("libyoga.a");
+	c.flag("-std=c++14");
+	c.flag("-fno-omit-frame-pointer");
+	c.flag("-fexceptions");
+	c.flag("-Wall");
+	c.flag("-Werror");
+	c.flag("-O3");
+	c.flag("-ffast-math");
+
+	c.file("yoga/yoga/Yoga.cpp");
+	c.compile("libyoga.a");
 }
 
 fn bindgen_yoga() {
-	let bindings = bindgen::Builder::default()
-		.rust_target(RustTarget::Nightly);
-	
+	let mut bindings = Builder::default().rust_target(RustTarget::Nightly);
+
 	let enumerated_and_edges_setters = vec![
 		"Direction",
 		"FlexDirection",
@@ -54,9 +53,8 @@ fn bindgen_yoga() {
 		"FlexGrow",
 		"FlexShrink",
 		"AspectRatio",
-
 		// Edges
-		"Border"
+		"Border",
 	];
 
 	let unit_and_edge_setters = vec![
@@ -64,38 +62,38 @@ fn bindgen_yoga() {
 		"MinHeight",
 		"MaxWidth",
 		"MaxHeight",
-
 		// Edge
 		"Position",
 		"Margin",
 		"Padding",
-	]
+	];
 
 	let auto_unit_and_edge_setters = vec![
 		"FlexBasis",
 		"Width",
 		"Height",
-
 		// Edge
 		"Margin",
 	];
 
-	for property in enumerated_setters {
-		bindings.whitelist_function(format!("YGNodeStyleSet{}", property));
+	for property in enumerated_and_edges_setters {
+		bindings = bindings.whitelist_function(format!("YGNodeStyleSet{}", property));
 	}
 
-	for property in unit_setters {
-		bindings.whitelist_function(format!("YGNodeStyleSet{}", property));
-		bindings.whitelist_function(format!("YGNodeStyleSet{}Percent", property));
+	for property in unit_and_edge_setters {
+		bindings = bindings
+			.whitelist_function(format!("YGNodeStyleSet{}", property))
+			.whitelist_function(format!("YGNodeStyleSet{}Percent", property));
 	}
 
-	for property in auto_unit_setters {
-		bindings.whitelist_function(format!("YGNodeStyleSet{}", property));
-		bindings.whitelist_function(format!("YGNodeStyleSet{}Percent", property));
-		bindings.whitelist_function(format!("YGNodeStyleSet{}Auto", property));
+	for property in auto_unit_and_edge_setters {
+		bindings = bindings
+			.whitelist_function(format!("YGNodeStyleSet{}", property))
+			.whitelist_function(format!("YGNodeStyleSet{}Percent", property))
+			.whitelist_function(format!("YGNodeStyleSet{}Auto", property));
 	}
 
-	bindings	
+	bindings = bindings	
 		// Basic props
 		.whitelist_type("YGSize")
 		.whitelist_type("YGConfig")
@@ -104,14 +102,14 @@ fn bindgen_yoga() {
 		.whitelist_type("YGNode")
 
 		// Getter calculated layout result
-// Left
-// Top
-// Right
-// Bottom
-// Width
-// Height
-// Direction
-// HadOverflow
+		// Left
+		// Top
+		// Right
+		// Bottom
+		// Width
+		// Height
+		// Direction
+		// HadOverflow
 
 		// Node
 		.whitelist_function("YGNodeNew")
@@ -196,21 +194,21 @@ fn bindgen_yoga() {
 		.whitelist_function("YGAssertWithNode")
 		.whitelist_function("YGAssertWithConfig")
 
+		.layout_tests(false)
 		.rustfmt_bindings(true)
 		.rustified_enum("YG.*")
-		.header("yoga/yoga/Yoga.h")
-		.generate()
-		.expect("Unable to generate bindings");
+		.header("yoga/yoga/Yoga.h");
 
 	let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+	let build = bindings.generate().expect("Unable to generate bindings");
 
-	bindings
+	build
 		.write_to_file(out_path.join("bindings.rs"))
 		.expect("Unable to write bindings!");
 }
 
 fn main() {
-  update_submodules();
-  compile_yoga();
-  bindgen_yoga();
+	update_submodules();
+	compile_yoga();
+	bindgen_yoga();
 }
